@@ -60,11 +60,37 @@ async function encryptContent (content) {
   };
 }
 
+/**
+ * 
+ * @param {[string]} args 
+ * @param {any} setings
+ * @returns {boolean | string}
+ */
+function getClipboard(args, settings) {
+  if (!!args.includes('--clipboard')) {
+    return clipboard.readText()
+  } else if (settings.get('clip', true)) {
+    return clipboard.readText()
+  } else {
+    return false
+  }
+}
+
+
+/**
+ * 
+ * @param {[string]} args 
+ * @returns {string}
+ */
+function getPassedText(args) {
+  args.slice(args.indexOf('--text'))
+  args.shift()
+  return args.join(" ")
+}
+
 module.exports = class MicroPaste extends Plugin {
   startPlugin () {
-    const domain = this.settings.get('domain', 'https://micro.sylo.digital');
-    const authKey = this.settings.get('authKey', '');
-
+    const HOST_OPTIONS = new Settings().HOST_OPTIONS;
     powercord.api.settings.registerSettings('micro-paste', {
       category: this.entityID,
       label: 'Micro Paste',
@@ -76,13 +102,28 @@ module.exports = class MicroPaste extends Plugin {
       description: 'Lets you paste content to Micro',
       usage: '{c} [--send] <--clipboard | FILE_URL> <--encrypt> <--burn> <--paranoid> <--extension MD/whateveridk>',
       executor: async (args) => {
+        const domain = this.settings.get('domain', 'https://micro.sylo.digital');
+        const authHeaderName = this.settings.get('authHeaderName', 'Authorization');
+        const authKey = this.settings.get('authKey', '');
+
+        let pickedDomain = "micro.sylo.digital"
+        HOST_OPTIONS.forEach(obj => {
+          obj.enabled = this.settings.get(`allowHost_${obj.set}}`, false);
+          if (obj.enabled) pickedDomain = obj.label
+        });
+        
+
+        /**
+         * @type {boolean}
+         */
         const send = args.includes('--send')
           ? !!args.splice(args.indexOf('--send'), 1)
           : this.settings.get('send', false);
 
-        const text = args.includes('--clipboard')
-          ? clipboard.readText()
-          : await this.parseArguments(args);
+        /**
+         * @type {boolean | string}
+         */
+        const clipText = getClipboard(args, this.settings)
 
         const extension = args.includes('--extension')
           ? args[args.indexOf('--extension') + 1]
@@ -122,11 +163,21 @@ module.exports = class MicroPaste extends Plugin {
         const pasteBody = JSON.stringify(body);
 
         try {
-          const body = await microPost(`${domain}/api/paste`, pasteBody, authKey);
-          console.log(body);
+          const body = await microPost(`${domain}/api/paste`, pasteBody, authHeaderName , authKey);
+          if (body.statusCode >= 500) {
+            return {
+              send: false,
+              result: `A server-side error occured: \`${body.message}\``
+            }
+          } else if (body.statusCode >= 400) {
+            return {
+              send: false,
+              result: `Something went wrong on your end, check the auth key maybe? Message: \`${body.message}\``
+            }
+          }
           return {
             send,
-            result: encryptionKey === false ? `${domain}/p/${body.id}` : `${domain}/p/${body.id}#key=${encryptionKey}`
+            result: encryptionKey === false ? `https://${pickedDomain}/p/${body.id}` : `https:/${pickedDomain}/p/${body.id}#key=${encryptionKey}`
           };
         } catch (e) {
           return {
