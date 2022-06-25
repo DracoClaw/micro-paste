@@ -4,9 +4,9 @@ const { clipboard } = require('electron');
 const { post } = require('powercord/http');
 const Settings = require('./Settings.jsx');
 
-const microPost = async (url, body, authKey) => post(url)
+const microPost = async (url, body, authHeaderName, authKey) => post(url)
   .set('Content-Type', 'application/json; charset=utf-8')
-  .set('Authorization', authKey)
+  .set(authHeaderName, authKey)
   .send(body)
   .then(r => r.body)
   .catch(() => null);
