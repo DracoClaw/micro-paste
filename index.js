@@ -155,10 +155,8 @@ module.exports = class MicroPaste extends Plugin {
           encryptionKey = result.key;
         }
 
-        const pasteBody = JSON.stringify(body);
-
         try {
-          const body = await microPost(`${domain}/api/paste`, pasteBody, authHeaderName, authKey);
+          const body = await microPost(`${domain}/api/paste`, body, authHeaderName, authKey);
           if (body.statusCode >= 500) {
             return {
               send: false,
