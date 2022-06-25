@@ -4,9 +4,10 @@ const { clipboard } = require('electron');
 const { post } = require('powercord/http');
 const Settings = require('./Settings.jsx');
 
-const microPost = async (url, body, authHeaderName, authKey) => post(url)
+const microPost = async (url, body, pickedDomain, authHeaderName, authKey) => post(url)
   .set('Content-Type', 'application/json; charset=utf-8')
   .set(authHeaderName, authKey)
+  .set('x-micro-host', pickedDomain)
   .send(body)
   .then(r => r.body)
   .catch(() => null);
@@ -156,7 +157,7 @@ module.exports = class MicroPaste extends Plugin {
         }
 
         try {
-          const body = await microPost(`${domain}/api/paste`, body, authHeaderName, authKey);
+          const body = await microPost(`${domain}/api/paste`, body, pickedDomain, authHeaderName, authKey);
           if (body.statusCode >= 500) {
             return {
               send: false,
