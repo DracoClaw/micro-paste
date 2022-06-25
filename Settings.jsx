@@ -117,8 +117,8 @@ module.exports = class MicroPastePluginSettings extends React.PureComponent {
             </TextInput>
             {HOST_OPTIONS.map((obj) => 
               <SwitchItem 
-                value={getSetting(`allowHost_${obj.set}}`, false)}
-                onChange={() => toggleSetting(`allowHost_${obj.set}}`)}
+                value={getSetting(`allowHost_${obj.set}`, false)}
+                onChange={() => toggleSetting(`allowHost_${obj.set}`)}
               >{obj.jsx(this.state.username)}</SwitchItem>
             )}
         </Category>

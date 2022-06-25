@@ -4,9 +4,10 @@ const { clipboard } = require('electron');
 const { post } = require('powercord/http');
 const Settings = require('./Settings.jsx');
 
-const microPost = async (url, body, authHeaderName, authKey) => post(url)
+const microPost = async (url, body, pickedDomain, authHeaderName, authKey) => post(url)
   .set('Content-Type', 'application/json; charset=utf-8')
   .set(authHeaderName, authKey)
+  .set('x-micro-host', pickedDomain)
   .send(body)
   .then(r => r.body)
   .catch(() => null);
@@ -103,8 +104,7 @@ module.exports = class MicroPaste extends Plugin {
 
         let pickedDomain = "micro.sylo.digital"
         HOST_OPTIONS.forEach(obj => {
-          obj.enabled = this.settings.get(`allowHost_${obj.set}}`, false);
-          if (obj.enabled) pickedDomain = obj.label
+          if (this.settings.get(`allowHost_${obj.set}`, false)) pickedDomain = obj.label;
         });
         
 
@@ -155,24 +155,22 @@ module.exports = class MicroPaste extends Plugin {
           encryptionKey = result.key;
         }
 
-        const pasteBody = JSON.stringify(body);
-
         try {
-          const body = await microPost(`${domain}/api/paste`, pasteBody, authHeaderName, authKey);
-          if (body.statusCode >= 500) {
+          const resp = await microPost(`${domain}/api/paste`, body, pickedDomain, authHeaderName, authKey);
+          if (resp.statusCode >= 500) {
             return {
               send: false,
-              result: `A server-side error occured: \`${body.message}\``
+              result: `A server-side error occured: \`${resp.message}\``
             }
-          } else if (body.statusCode >= 400) {
+          } else if (resp.statusCode >= 400) {
             return {
               send: false,
-              result: `Something went wrong on your end, check the auth key maybe? Message: \`${body.message}\``
+              result: `Something went wrong on your end, check the auth key maybe? Message: \`${resp.message}\``
             }
           }
           return {
             send,
-            result: encryptionKey === false ? `https://${pickedDomain}/p/${body.id}` : `https://${pickedDomain}/p/${body.id}#key=${encryptionKey}`
+            result: encryptionKey === false ? `https://${pickedDomain}/p/${resp.id}` : `https://${pickedDomain}/p/${resp.id}#key=${encryptionKey}`
           };
         } catch (e) {
           console.error(e); // log error to console for debugging
