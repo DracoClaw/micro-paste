@@ -104,8 +104,7 @@ module.exports = class MicroPaste extends Plugin {
 
         let pickedDomain = "micro.sylo.digital"
         HOST_OPTIONS.forEach(obj => {
-          obj.enabled = this.settings.get(`allowHost_${obj.set}`, false);
-          if (obj.enabled) pickedDomain = obj.label
+          if (this.settings.get(`allowHost_${obj.set}`, false)) pickedDomain = obj.label;
         });
         
 
