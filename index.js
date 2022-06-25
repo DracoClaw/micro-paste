@@ -175,6 +175,8 @@ module.exports = class MicroPaste extends Plugin {
             result: encryptionKey === false ? `https://${pickedDomain}/p/${body.id}` : `https://${pickedDomain}/p/${body.id}#key=${encryptionKey}`
           };
         } catch (e) {
+          console.error(e); // log error to console for debugging
+
           return {
             send: false,
             result: `Upload to the specified domain ${domain} failed. Please check that the server is setup properly.`
