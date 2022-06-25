@@ -1,20 +1,15 @@
 const { Plugin } = require('powercord/entities');
 const { get } = require('powercord/http');
 const { clipboard } = require('electron');
-const undici = require('undici');
+const { post } = require('powercord/http');
 const Settings = require('./Settings.jsx');
 
-const microPost = async (url, body, authKey) => {
-  const req = await undici.request(url, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json; charset=utf-8',
-      Authorization: authKey
-    },
-    body
-  });
-  return req.body.json();
-};
+const microPost = async (url, body, authHeaderName, authKey) => post(url)
+  .set('Content-Type', 'application/json; charset=utf-8')
+  .set(authHeaderName, authKey)
+  .send(body)
+  .then(r => r.body)
+  .catch(() => null);
 
 const ENCRYPTION_ALGORITHM = 'AES-GCM';
 const ENCRYPTION_LENGTH = 256;
@@ -123,7 +118,7 @@ module.exports = class MicroPaste extends Plugin {
         /**
          * @type {boolean | string}
          */
-        const clipText = getClipboard(args, this.settings)
+        const text = getClipboard(args, this.settings)
 
         const extension = args.includes('--extension')
           ? args[args.indexOf('--extension') + 1]
@@ -163,7 +158,7 @@ module.exports = class MicroPaste extends Plugin {
         const pasteBody = JSON.stringify(body);
 
         try {
-          const body = await microPost(`${domain}/api/paste`, pasteBody, authHeaderName , authKey);
+          const body = await microPost(`${domain}/api/paste`, pasteBody, authHeaderName, authKey);
           if (body.statusCode >= 500) {
             return {
               send: false,
@@ -180,6 +175,8 @@ module.exports = class MicroPaste extends Plugin {
             result: encryptionKey === false ? `https://${pickedDomain}/p/${body.id}` : `https://${pickedDomain}/p/${body.id}#key=${encryptionKey}`
           };
         } catch (e) {
+          console.error(e); // log error to console for debugging
+
           return {
             send: false,
             result: `Upload to the specified domain ${domain} failed. Please check that the server is setup properly.`
@@ -199,8 +196,7 @@ module.exports = class MicroPaste extends Plugin {
   pluginWillUnload () {
     powercord.api.settings.unregisterSettings('micro-paste');
     powercord.api.commands.unregisterCommand('paste');
-    if (this.shouldReenablePCHB) powercord.pluginManager.enable('pc-hastebin')
-    this.forceUpdate()
+    if (this.shouldReenablePCHB) powercord.pluginManager.enable('pc-hastebin');
   }
 
   parseArguments (args) {
