@@ -118,7 +118,7 @@ module.exports = class MicroPaste extends Plugin {
         /**
          * @type {boolean | string}
          */
-        const clipText = getClipboard(args, this.settings)
+        const text = getClipboard(args, this.settings)
 
         const extension = args.includes('--extension')
           ? args[args.indexOf('--extension') + 1]
@@ -196,8 +196,7 @@ module.exports = class MicroPaste extends Plugin {
   pluginWillUnload () {
     powercord.api.settings.unregisterSettings('micro-paste');
     powercord.api.commands.unregisterCommand('paste');
-    if (this.shouldReenablePCHB) powercord.pluginManager.enable('pc-hastebin')
-    this.forceUpdate()
+    if (this.shouldReenablePCHB) powercord.pluginManager.enable('pc-hastebin');
   }
 
   parseArguments (args) {
