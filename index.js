@@ -1,20 +1,15 @@
 const { Plugin } = require('powercord/entities');
 const { get } = require('powercord/http');
 const { clipboard } = require('electron');
-const undici = require('undici');
+const { post } = require('powercord/http');
 const Settings = require('./Settings.jsx');
 
-const microPost = async (url, body, authKey) => {
-  const req = await undici.request(url, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json; charset=utf-8',
-      Authorization: authKey
-    },
-    body
-  });
-  return req.body.json();
-};
+const microPost = async (url, body, authKey) => post(url)
+  .set('Content-Type', 'application/json; charset=utf-8')
+  .set('Authorization', authKey)
+  .send(body)
+  .then(r => r.body)
+  .catch(() => null);
 
 const ENCRYPTION_ALGORITHM = 'AES-GCM';
 const ENCRYPTION_LENGTH = 256;
@@ -163,7 +158,7 @@ module.exports = class MicroPaste extends Plugin {
         const pasteBody = JSON.stringify(body);
 
         try {
-          const body = await microPost(`${domain}/api/paste`, pasteBody, authHeaderName , authKey);
+          const body = await microPost(`${domain}/api/paste`, pasteBody, authHeaderName, authKey);
           if (body.statusCode >= 500) {
             return {
               send: false,
