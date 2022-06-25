@@ -157,21 +157,21 @@ module.exports = class MicroPaste extends Plugin {
         }
 
         try {
-          const body = await microPost(`${domain}/api/paste`, body, pickedDomain, authHeaderName, authKey);
-          if (body.statusCode >= 500) {
+          const resp = await microPost(`${domain}/api/paste`, body, pickedDomain, authHeaderName, authKey);
+          if (resp.statusCode >= 500) {
             return {
               send: false,
-              result: `A server-side error occured: \`${body.message}\``
+              result: `A server-side error occured: \`${resp.message}\``
             }
-          } else if (body.statusCode >= 400) {
+          } else if (resp.statusCode >= 400) {
             return {
               send: false,
-              result: `Something went wrong on your end, check the auth key maybe? Message: \`${body.message}\``
+              result: `Something went wrong on your end, check the auth key maybe? Message: \`${resp.message}\``
             }
           }
           return {
             send,
-            result: encryptionKey === false ? `https://${pickedDomain}/p/${body.id}` : `https://${pickedDomain}/p/${body.id}#key=${encryptionKey}`
+            result: encryptionKey === false ? `https://${pickedDomain}/p/${resp.id}` : `https://${pickedDomain}/p/${resp.id}#key=${encryptionKey}`
           };
         } catch (e) {
           console.error(e); // log error to console for debugging
